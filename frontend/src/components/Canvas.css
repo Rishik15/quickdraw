@@ -1,0 +1,9 @@
+.drawing-canvas {
+  border: 2px solid #bbb;
+  border-radius: 3px;
+  cursor: crosshair;
+  background-color: #f9f9f9; /* Light background */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  height: auto;
+}

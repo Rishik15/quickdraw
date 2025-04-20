@@ -1,0 +1,10 @@
+.instructions {
+    font-size: 1.1em; /* Adjusted font size */
+    color: #333;
+  }
+  
+  .target-word {
+    font-weight: bold;
+    color: #1976d2; /* Google Blue */
+    margin-left: 5px;
+  }

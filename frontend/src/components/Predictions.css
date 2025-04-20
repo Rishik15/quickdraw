@@ -1,0 +1,15 @@
+.predictions {
+    display: flex;
+    gap: 8px;
+    font-size: 0.9em; /* Adjusted font size */
+    color: #777;
+    margin-top: 10px;
+    justify-content: center; /* Center the prediction text */
+  }
+  
+  .prediction-item {
+    background-color: #eee;
+    padding: 6px 12px;
+    border-radius: 15px;
+    border: 1px solid #ddd;
+  }

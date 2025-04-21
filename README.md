@@ -1,1 +1,0 @@
-quickdraw clone README file

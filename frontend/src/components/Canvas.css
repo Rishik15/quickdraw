@@ -7,3 +7,58 @@
   width: 100%;
   height: auto;
 }
+
+.canvas-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.canvas-container.light {
+  background-color: #f9f9f9;
+  color: #222;
+}
+
+.canvas-container.dark {
+  background-color: #121212;
+  color: #f5f5f5;
+}
+
+.toolbar {
+  margin-bottom: 10px;
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.toolbar button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.canvas-container.light .toolbar button {
+  background-color: #e0e0e0;
+  color: #000;
+}
+
+.canvas-container.dark .toolbar button {
+  background-color: #333;
+  color: #fff;
+}
+
+.drawing-canvas {
+  border: 2px solid #444;
+  cursor: crosshair;
+  background-color: #fff;
+}
+
+.canvas-container.dark .drawing-canvas {
+  background-color: #1e1e1e;
+}

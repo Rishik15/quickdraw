@@ -1,6 +1,5 @@
 import React from 'react';
 import Canvas from './components/Canvas';
-import Controls from './components/Controls';
 import Predictions from './components/Predictions';
 import Timer from './components/Timer';
 import Instructions from './components/Instructions';

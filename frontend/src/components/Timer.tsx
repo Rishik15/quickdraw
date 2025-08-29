@@ -3,28 +3,29 @@ import './Timer.css';
 
 interface TimerProps {
   initialTime: number;
+  onTimeExpired: () => void;
 }
 
-const Timer: React.FC<TimerProps> = ({ initialTime }) => {
+const Timer: React.FC<TimerProps> = ({ initialTime, onTimeExpired }) => {
   const [time, setTime] = useState(initialTime);
 
+  // Reset timer when initialTime changes or component mounts
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      setTime((prevTime) => (prevTime > 0 ? prevTime - 1 : 0));
-    }, 1000);
+    setTime(initialTime);
+  }, [initialTime]);
 
-    return () => clearInterval(intervalId); // Cleanup on unmount
-  }, []);
-
-  const formatTime = (seconds: number): string => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
-  };
+  useEffect(() => {
+    if (time > 0) {
+      const timerId = setTimeout(() => setTime(time - 1), 1000);
+      return () => clearTimeout(timerId);
+    } else {
+      onTimeExpired();
+    }
+  }, [time, onTimeExpired]);
 
   return (
     <div className="timer">
-      {formatTime(time)}
+      {String(Math.floor(time / 60)).padStart(2, '0')}:{String(time % 60).padStart(2, '0')}
     </div>
   );
 };

@@ -1,13 +1,14 @@
-from rdp import rdp
+from simplification.cutil import simplify_coords
 import sys
 import ast
+import numpy as np
 
 def simplifyDrawing(drawing, epsilon=2.0):
     simplified = []
     for x, y in drawing:
-        points = list(zip(x, y))
-        simplified_pts = rdp(points, epsilon=epsilon)
-        sx, sy = zip(*simplified_pts) if simplified_pts else ([], [])
+        points = np.array(list(zip(x, y)))
+        simplified_pts = simplify_coords(points, epsilon)
+        sx, sy = zip(*simplified_pts) if len(simplified_pts) > 0 else ([], [])
         simplified.append([list(sx), list(sy)])
     return simplified
 

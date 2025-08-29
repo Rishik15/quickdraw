@@ -1,7 +1,18 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import './Canvas.css';
 
-interface CanvasProps {}
+export interface CanvasHandles {
+  clearCanvas: () => void;
+  toggleDarkMode: () => void;
+  undo: () => void;
+  redo: () => void;
+}
+
+interface CanvasProps {
+  color: string;
+  darkMode: boolean;
+  onFinishDrawing: (predictions: string[]) => void;
+}
 
 interface Point {
   x: number;
@@ -13,15 +24,12 @@ interface Stroke {
   color: string;
 }
 
-const Canvas: React.FC<CanvasProps> = () => {
+const Canvas: React.ForwardRefRenderFunction<CanvasHandles, CanvasProps> = ({ color, darkMode, onFinishDrawing }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const contextRef = useRef<CanvasRenderingContext2D | null>(null);
   const isDrawingRef = useRef(false);
   const lastPosRef = useRef({ x: 0, y: 0 });
 
-  const [colorLight, setColorLight] = useState('black');
-  const [colorDark, setColorDark] = useState('white');
-  const [darkMode, setDarkMode] = useState(false);
   const [strokes, setStrokes] = useState<Stroke[]>([]);   // stack of strokes
   const currentStrokeRef = useRef<Stroke | null>(null);   // current stroke being drawn
   const [undoneStrokes, setUndoneStrokes] = useState<Stroke[]>([]); // stack of undone strokes
@@ -30,23 +38,54 @@ const Canvas: React.FC<CanvasProps> = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    canvas.width = 900;
-    canvas.height = 675;
+    const resizeCanvas = () => {
+      const { width, height } = canvas.getBoundingClientRect();
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext('2d');
+      if (context) {
+        context.lineCap = 'round';
+        context.strokeStyle = color;
+        context.lineWidth = 5;
+        contextRef.current = context;
+        strokes.forEach(drawStroke); // Redraw existing strokes
+      }
+    };
 
-    const context = canvas.getContext('2d');
-    if (!context) return;
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
 
-    context.lineCap = 'round';
-    context.strokeStyle = darkMode ? colorDark : colorLight;
-    context.lineWidth = 5;
-    contextRef.current = context;
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+    };
   }, []);
 
   useEffect(() => {
-    if (contextRef.current) {
-      contextRef.current.strokeStyle = darkMode ? colorDark : colorLight;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const context = canvas.getContext('2d');
+    if (!context) return;
+
+    if (context) {
+      context.lineCap = 'round';
+      context.strokeStyle = color;
+      context.lineWidth = 5;
+      contextRef.current = context;
     }
-  }, [darkMode ? colorDark : colorLight]);
+  }, [color]); // Remove strokes from dependency array as it's not needed here
+
+  useEffect(() => {
+    if (contextRef.current) {
+      contextRef.current.strokeStyle = color;
+    }
+  }, [color]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      canvas.style.backgroundColor = darkMode ? '#333' : '#fff';
+    }
+  }, [darkMode]);
 
   const startDrawing = ({ nativeEvent }: React.MouseEvent) => {
     const canvas = canvasRef.current;
@@ -61,7 +100,7 @@ const Canvas: React.FC<CanvasProps> = () => {
     lastPosRef.current = { x, y };
 
     currentStrokeRef.current = {
-      color: darkMode ? colorDark : colorLight,
+      color: color,
       points: [{ x, y }],
     }; // Initialize current stroke with the first point
   };
@@ -93,13 +132,34 @@ const Canvas: React.FC<CanvasProps> = () => {
     }
   };
 
-  const finishDrawing = () => {
+  const finishDrawing = async () => {
     isDrawingRef.current = false;
 
     const stroke = currentStrokeRef.current;
     if (stroke) {
-      setStrokes((prev) => [...prev, stroke]);
+      const newStrokes = [...strokes, stroke];
+      setStrokes(newStrokes);
       currentStrokeRef.current = null; // Reset current stroke
+
+      try {
+        const response = await fetch('http://localhost:5002/predict', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            rawStrokes: newStrokes,
+            exclude: [] // Pass empty array for now, could be used to exclude previous wrong guesses
+          }),
+        });
+        const data = await response.json();
+        if (data.prediction) {
+          onFinishDrawing(data.prediction);
+        }
+      } catch (error) {
+        console.error('Error getting prediction:', error);
+        onFinishDrawing([]); // Send empty array on error
+      }
     }
   };
 
@@ -110,21 +170,18 @@ const Canvas: React.FC<CanvasProps> = () => {
     context.clearRect(0, 0, canvas.width, canvas.height);
   };
 
-  const toggleDarkMode = () => {
-    const canvas = canvasRef.current;
-    const context = contextRef.current;
-    if (!canvas || !context) return;
-
-    if (darkMode) {
-      canvas.style.backgroundColor = 'white';
-      context.strokeStyle = darkMode ? colorDark : colorLight;
-    } else {
-      canvas.style.backgroundColor = '#333';
-      context.strokeStyle = darkMode ? colorDark : colorLight;
-    }
-
-    setDarkMode(!darkMode);
-  };
+  useImperativeHandle(ref, () => ({
+    clearCanvas,
+    toggleDarkMode: () => {
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const newDarkMode = canvas.style.backgroundColor === '#fff';
+        canvas.style.backgroundColor = newDarkMode ? '#333' : '#fff';
+      }
+    },
+    undo,
+    redo,
+  }));
 
   const undo = () => {
     if (strokes.length === 0) return;
@@ -171,22 +228,6 @@ const Canvas: React.FC<CanvasProps> = () => {
 
   return (
     <div className="canvas-container">
-      <div className="toolbar">
-        <label>
-          Brush Color:{' '}
-          <input
-            type="color"
-            value={darkMode ? colorDark : colorLight}
-            onChange={(e) => darkMode ? setColorDark(e.target.value) : setColorLight(e.target.value)}
-          />
-        </label>
-        <button onClick={clearCanvas}>Clear</button>
-        <button onClick={toggleDarkMode}>
-          {darkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
-        </button>
-        <button onClick={undo}>Undo</button>
-        <button onClick={redo}>Redo</button>
-      </div>
       <canvas
         ref={canvasRef}
         className="drawing-canvas"
@@ -199,4 +240,4 @@ const Canvas: React.FC<CanvasProps> = () => {
   );
 };
 
-export default Canvas;
+export default forwardRef(Canvas);

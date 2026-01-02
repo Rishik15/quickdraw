@@ -1,15 +1,72 @@
-.predictions {
-    display: flex;
-    gap: 8px;
-    font-size: 0.9em; /* Adjusted font size */
-    color: #777;
-    margin-top: 10px;
-    justify-content: center; /* Center the prediction text */
+.predictions-overlay {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  width: auto;
+  max-width: 90%;
+  pointer-events: none;
+}
+
+.predictions-bubble {
+  background-color: #f0f0f0;
+  border-radius: 10px;
+  padding: 10px 15px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  position: relative;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 1.1em;
+  text-align: center;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.predictions-bubble.success {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.predictions-bubble.timeout {
+  background-color: #f44336;
+  color: white;
+}
+
+.predictions-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid #f0f0f0;
+  transition: border-top-color 0.3s ease;
+}
+
+.predictions-bubble.success::after {
+  border-top-color: #4CAF50;
+}
+
+.predictions-bubble.timeout::after {
+  border-top-color: #f44336;
+}
+
+@keyframes popIn {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
   }
-  
-  .prediction-item {
-    background-color: #eee;
-    padding: 6px 12px;
-    border-radius: 15px;
-    border: 1px solid #ddd;
+  100% {
+    transform: scale(1);
+    opacity: 1;
   }
+}
+
+.predictions-bubble {
+  animation: popIn 0.3s ease-out;
+}
